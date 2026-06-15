@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지구 기온 변화 탐구 — 1차시</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --blue:#2563EB; --blue-d:#1d4ed8; --blue-l:#DBEAFE; --blue-ll:#EFF6FF;
+  --green:#166534; --green-m:#16a34a; --green-l:#DCFCE7; --green-ll:#F0FDF4;
+  --orange:#D85A30; --orange-l:#FFEDD5;
+  --red:#991b1b; --red-l:#FEE2E2;
+  --yellow:#854d0e; --yellow-l:#FEF9C3;
+  --gray-50:#F9FAFB; --gray-100:#F3F4F6; --gray-200:#E5E7EB;
+  --gray-400:#9CA3AF; --gray-600:#4B5563; --gray-800:#1F2937;
+  --r:10px; --shadow:0 1px 6px rgba(0,0,0,0.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;background:#EFF6FF;color:var(--gray-800);min-height:100vh;padding-bottom:80px}
+
+/* top bar */
+.topbar{background:var(--blue);color:#fff;padding:13px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200}
+.topbar .badge{background:rgba(255,255,255,.22);font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.04em}
+.topbar h1{font-size:16px;font-weight:700}
+.topbar .name-area{margin-left:auto;display:flex;gap:7px;align-items:center}
+.topbar label{font-size:12px;opacity:.85}
+.topbar input{border:none;border-radius:6px;padding:5px 9px;font-size:13px;width:100px;color:var(--gray-800)}
+
+/* progress */
+.prog-bar-wrap{background:#fff;border-bottom:1px solid var(--gray-200);padding:0 20px}
+.stage-tabs{display:flex;max-width:740px;margin:0 auto}
+.stage-tab{flex:1;padding:11px 6px 9px;font-size:12px;font-weight:600;color:var(--gray-400);border-bottom:3px solid transparent;text-align:center;transition:all .2s;user-select:none;display:flex;align-items:center;justify-content:center;gap:5px;cursor:default}
+.stage-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.stage-tab.done{color:var(--green-m);border-bottom-color:var(--green-m);cursor:pointer}
+.stage-tab.done:hover{background:var(--green-ll)}
+.stage-num{width:18px;height:18px;border-radius:50%;background:var(--gray-200);color:var(--gray-600);font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.stage-tab.active .stage-num{background:var(--blue);color:#fff}
+.stage-tab.done .stage-num{background:var(--green-m);color:#fff}
+
+/* quiz progress within stage */
+.qprog{max-width:740px;margin:0 auto;padding:10px 20px 0;display:flex;align-items:center;gap:10px}
+.qprog-label{font-size:12px;color:var(--gray-400);white-space:nowrap}
+.qprog-dots{display:flex;gap:5px;flex-wrap:wrap}
+.qdot{width:10px;height:10px;border-radius:50%;background:var(--gray-200);transition:background .3s}
+.qdot.done{background:var(--green-m)}
+.qdot.active{background:var(--blue)}
+
+/* main */
+.main{max-width:740px;margin:0 auto;padding:20px 16px}
+
+/* stage intro */
+.stage-intro{background:#fff;border-radius:var(--r);border:1px solid var(--gray-200);padding:20px 22px;margin-bottom:18px;display:flex;gap:14px;align-items:flex-start}
+.intro-icon{font-size:28px;line-height:1;flex-shrink:0}
+.intro-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.intro-desc{font-size:13px;color:var(--gray-600);line-height:1.7}
+
+/* chart card */
+.chart-card{background:#fff;border-radius:var(--r);border:1px solid var(--gray-200);padding:18px 18px 14px;margin-bottom:16px;box-shadow:var(--shadow)}
+.chart-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.chart-tab{font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid var(--gray-200);background:#fff;color:var(--gray-600);cursor:pointer}
+.chart-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chart-wrap{position:relative;width:100%;height:240px;margin-bottom:8px}
+.chart-note{font-size:11px;color:var(--gray-400);line-height:1.5}
+
+/* quiz card */
+.quiz-card{background:#fff;border-radius:var(--r);border:1px solid var(--gray-200);padding:20px 20px 16px;margin-bottom:16px;box-shadow:var(--shadow);transition:border-color .2s}
+.quiz-card.correct-flash{border-color:var(--green-m);animation:flashG .5s ease}
+.quiz-card.wrong-flash{border-color:var(--orange);animation:flashR .5s ease}
+@keyframes flashG{0%,100%{border-color:var(--gray-200)}50%{border-color:var(--green-m);background:#f0fdf4}}
+@keyframes flashR{0%,100%{border-color:var(--gray-200)}50%{border-color:var(--orange);background:#fff7ed}}
+
+.quiz-top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.q-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--blue-l);color:var(--blue);white-space:nowrap}
+.q-type-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--gray-100);color:var(--gray-400)}
+.quiz-question{font-size:15px;font-weight:600;line-height:1.6;margin-bottom:14px;color:var(--gray-800)}
+.quiz-sub{font-size:13px;color:var(--gray-600);line-height:1.6;margin-bottom:12px}
+
+/* choice buttons */
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.choice-btn{padding:11px 14px;border-radius:8px;border:1.5px solid var(--gray-200);background:#fff;font-size:13px;color:var(--gray-800);cursor:pointer;text-align:left;line-height:1.4;transition:all .15s;font-family:inherit}
+.choice-btn:hover:not(:disabled){border-color:var(--blue);background:var(--blue-ll)}
+.choice-btn.selected{border-color:var(--blue);background:var(--blue-ll);color:var(--blue);font-weight:600}
+.choice-btn.correct{border-color:var(--green-m);background:var(--green-ll);color:var(--green);font-weight:600}
+.choice-btn.wrong{border-color:var(--orange);background:var(--orange-l);color:var(--orange)}
+.choice-btn:disabled{cursor:default}
+.choices.single{grid-template-columns:1fr}
+
+/* OX buttons */
+.ox-wrap{display:flex;gap:12px;margin-bottom:12px}
+.ox-btn{flex:1;padding:18px;border-radius:10px;border:2px solid var(--gray-200);background:#fff;font-size:28px;cursor:pointer;transition:all .15s;font-family:inherit}
+.ox-btn:hover:not(:disabled){border-color:var(--blue);background:var(--blue-ll)}
+.ox-btn.selected{border-color:var(--blue);background:var(--blue-ll)}
+.ox-btn.correct{border-color:var(--green-m);background:var(--green-ll)}
+.ox-btn.wrong{border-color:var(--orange);background:var(--orange-l)}
+.ox-btn:disabled{cursor:default}
+
+/* number input */
+.num-wrap{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.num-input{border:1.5px solid var(--gray-200);border-radius:8px;padding:10px 14px;font-size:15px;font-weight:600;width:140px;color:var(--gray-800);font-family:inherit;text-align:center}
+.num-input:focus{outline:none;border-color:var(--blue)}
+.num-unit{font-size:14px;color:var(--gray-600)}
+.num-submit{padding:10px 20px;border-radius:8px;background:var(--blue);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.num-submit:hover{background:var(--blue-d)}
+
+/* text input */
+.text-wrap{margin-bottom:12px}
+.text-input{width:100%;border:1.5px solid var(--gray-200);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--gray-800);font-family:inherit;resize:vertical;min-height:60px}
+.text-input:focus{outline:none;border-color:var(--blue)}
+.text-submit{padding:9px 20px;border-radius:8px;background:var(--blue);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px}
+.text-submit:hover{background:var(--blue-d)}
+
+/* slider input */
+.slider-wrap{margin-bottom:14px}
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.slider-row input[type=range]{flex:1}
+.slider-val{font-size:18px;font-weight:700;color:var(--blue);min-width:55px;text-align:right}
+.slider-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--gray-400)}
+.slider-submit{padding:9px 20px;border-radius:8px;background:var(--blue);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* feedback boxes */
+.fb{border-radius:8px;padding:13px 16px;margin-bottom:10px;font-size:14px;line-height:1.7;display:none}
+.fb.show{display:block}
+.fb-correct{background:var(--green-ll);border-left:3px solid var(--green-m);color:var(--green)}
+.fb-wrong{background:var(--orange-l);border-left:3px solid var(--orange);color:#7c2d12}
+.fb-hint{background:var(--yellow-l);border-left:3px solid #ca8a04;color:var(--yellow)}
+.fb-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.fb .em{font-weight:700}
+
+/* next button */
+.next-btn{padding:11px 28px;border-radius:8px;background:var(--green-m);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;display:none;font-family:inherit;margin-top:4px}
+.next-btn:hover{background:var(--green)}
+.next-btn.show{display:inline-block}
+.retry-btn{padding:9px 18px;border-radius:8px;background:#fff;color:var(--orange);border:1.5px solid var(--orange);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-right:8px;display:none}
+.retry-btn.show{display:inline-block}
+.retry-btn:hover{background:var(--orange-l)}
+
+/* attempt indicator */
+.attempts{font-size:12px;color:var(--gray-400);margin-bottom:8px}
+.attempt-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gray-200);margin-right:3px}
+.attempt-dot.used{background:var(--orange)}
+
+/* formula box */
+.formula{background:var(--orange-l);border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:11px 15px;margin-bottom:14px;font-size:13px;color:var(--gray-800);line-height:1.8}
+.formula strong{color:var(--orange)}
+
+/* reflection section */
+.reflect-card{background:#fff;border-radius:var(--r);border:1px solid var(--gray-200);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.reflect-title{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.reflect-desc{font-size:13px;color:var(--gray-600);line-height:1.7;margin-bottom:12px}
+.reflect-textarea{width:100%;border:1.5px solid var(--gray-200);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--gray-800);font-family:inherit;resize:vertical;min-height:80px;line-height:1.7}
+.reflect-textarea:focus{outline:none;border-color:var(--blue)}
+.topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.topic-card{background:var(--blue-ll);border:1.5px solid var(--blue-l);border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .15s}
+.topic-card:hover{border-color:var(--blue);background:var(--blue-l)}
+.topic-card.selected{border-color:var(--blue);background:var(--blue-l)}
+.topic-card .tc-icon{font-size:18px;margin-bottom:5px}
+.topic-card .tc-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:2px}
+.topic-card .tc-desc{font-size:11px;color:var(--gray-600);line-height:1.5}
+.char-counter{font-size:11px;color:var(--gray-400);text-align:right;margin-top:3px}
+
+/* nav */
+.nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.btn-nav{padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-d)}
+.btn-secondary{background:#fff;color:var(--gray-600);border:1px solid var(--gray-200)}
+.btn-secondary:hover{background:var(--gray-50)}
+
+/* completion */
+.complete-wrap{text-align:center;padding:40px 20px}
+.complete-icon{font-size:56px;margin-bottom:16px}
+.complete-wrap h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.complete-wrap p{font-size:14px;color:var(--gray-600);line-height:1.8;margin-bottom:20px}
+.score-display{display:inline-block;background:var(--green-ll);border:2px solid var(--green-m);border-radius:var(--r);padding:16px 32px;margin-bottom:20px}
+.score-display .sc-num{font-size:40px;font-weight:700;color:var(--green);line-height:1}
+.score-display .sc-label{font-size:13px;color:var(--green-m);margin-top:4px}
+.answer-preview{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:14px 16px;text-align:left;font-size:13px;color:var(--gray-600);max-height:260px;overflow-y:auto;margin-bottom:14px}
+.ap-label{font-weight:700;color:var(--gray-800);margin-top:10px;font-size:13px}
+.ap-label:first-child{margin-top:0}
+.copy-btn{padding:12px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;border:none;width:100%;font-family:inherit}
+.copy-btn:hover{background:var(--blue-d)}
+
+/* screen toggle */
+.screen{display:none}
+.screen.active{display:block}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge">수학 × 환경</span>
+  <h1>지구 기온 변화 탐구</h1>
+  <div class="name-area">
+    <label for="sname">이름</label>
+    <input id="sname" type="text" placeholder="이름 입력" autocomplete="off">
+  </div>
+</div>
+
+<div class="prog-bar-wrap">
+  <div class="stage-tabs">
+    <div class="stage-tab active" id="stab0" onclick="goDoneStage(0)"><span class="stage-num">1</span>그래프 읽기</div>
+    <div class="stage-tab" id="stab1" onclick="goDoneStage(1)"><span class="stage-num">2</span>평균 계산</div>
+    <div class="stage-tab" id="stab2" onclick="goDoneStage(2)"><span class="stage-num">3</span>변화율</div>
+    <div class="stage-tab" id="stab3" onclick="goDoneStage(3)"><span class="stage-num">4</span>생각 나누기</div>
+  </div>
+  <div class="qprog" id="qprogRow">
+    <span class="qprog-label">문제 진행</span>
+    <div class="qprog-dots" id="qprogDots"></div>
+  </div>
+</div>
+
+<!-- ══════════════ STAGE 0: 그래프 읽기 ══════════════ -->
+<div class="main screen active" id="sc0">
+  <div class="stage-intro">
+    <div class="intro-icon">📈</div>
+    <div>
+      <div class="intro-title">단계 1 — 그래프 읽기</div>
+      <div class="intro-desc">1850년부터 2023년까지 지구 평균 기온이 어떻게 변했는지 그래프로 살펴보고, 퀴즈를 풀어봐요.<br>그래프를 꼼꼼히 보면 정답이 보여요!</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-tabs">
+      <button class="chart-tab active" onclick="setView('all',this)">전체 기간</button>
+      <button class="chart-tab" onclick="setView('early',this)">1850~1950년</button>
+      <button class="chart-tab" onclick="setView('modern',this)">1950~2023년</button>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="tempChart" role="img" aria-label="1850~2023년 지구 평균 기온 편차 꺾은선그래프">기온 편차 그래프</canvas>
+    </div>
+    <p class="chart-note">※ 기온 편차: 1850~1900년 평균을 기준(0°C)으로, 현재 기온이 얼마나 달라졌는지를 나타내요.</p>
+  </div>
+
+  <!-- Q0-1 -->
+  <div class="quiz-card" id="q0_1">
+    <div class="quiz-top"><span class="q-badge">Q1</span><span class="q-type-badge">4지선다</span></div>
+    <div class="quiz-question">그래프에서 기온 편차가 처음으로 <strong>+0.5°C를 넘어선</strong> 시기는 언제인가요?</div>
+    <div class="choices" id="ch0_1">
+      <button class="choice-btn" onclick="choiceAnswer('0_1',0)">① 1940년대</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_1',1)">② 1980년대</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_1',2)">③ 2000년대</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_1',3)">④ 2020년대</button>
+    </div>
+    <div class="attempts" id="att0_1"></div>
+    <div class="fb fb-wrong" id="fw0_1"><div class="fb-label">틀렸어요</div>그래프에서 기온 편차 <span class="em">+0.5°C 선</span>을 눈으로 따라가 보세요. 어느 연도에서 처음 그 선을 넘나요?</div>
+    <div class="fb fb-hint" id="fh0_1"><div class="fb-label">힌트</div>그래프를 보면 2000년대 이후 편차가 급격히 오릅니다. 2010년 편차는 <span class="em">+0.57°C</span>예요 — 이게 처음으로 0.5를 넘은 구간이에요!</div>
+    <div class="fb fb-correct" id="fc0_1"><div class="fb-label">정답!</div>맞아요! 2010년 편차가 +0.57°C로 처음 0.5°C를 넘었어요. 2023년엔 무려 <span class="em">+1.17°C</span>까지 올랐답니다.</div>
+    <div><button class="retry-btn" id="rb0_1" onclick="retry('0_1')">다시 도전</button><button class="next-btn" id="nb0_1" onclick="nextQuiz('0_1','0_2')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q0-2 -->
+  <div class="quiz-card" id="q0_2" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q2</span><span class="q-type-badge">OX 퀴즈</span></div>
+    <div class="quiz-question">1850년부터 1950년까지 100년 동안, 기온 편차는 거의 변하지 않았다.</div>
+    <div class="quiz-sub">그래프에서 '1850~1950년' 버튼을 눌러 확인해보세요!</div>
+    <div class="ox-wrap" id="ox0_2">
+      <button class="ox-btn" onclick="oxAnswer('0_2','O')">⭕ 맞다</button>
+      <button class="ox-btn" onclick="oxAnswer('0_2','X')">❌ 틀리다</button>
+    </div>
+    <div class="attempts" id="att0_2"></div>
+    <div class="fb fb-wrong" id="fw0_2"><div class="fb-label">틀렸어요</div>'1850~1950년' 버튼을 눌러서 그 구간만 확대해보세요. 100년 동안 기온이 어떻게 변했나요?</div>
+    <div class="fb fb-hint" id="fh0_2"><div class="fb-label">힌트</div>1850년 편차는 약 −0.41°C, 1950년 편차는 약 −0.10°C예요. 변화가 있긴 하지만 아주 작죠!</div>
+    <div class="fb fb-correct" id="fc0_2"><div class="fb-label">정답!</div>맞아요! 1850~1950년은 약 <span class="em">0.31°C 변화</span>로 상대적으로 완만했어요. 1980년 이후와 비교하면 훨씬 느렸답니다.</div>
+    <div><button class="retry-btn" id="rb0_2" onclick="retry('0_2')">다시 도전</button><button class="next-btn" id="nb0_2" onclick="nextQuiz('0_2','0_3')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q0-3 -->
+  <div class="quiz-card" id="q0_3" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q3</span><span class="q-type-badge">4지선다</span></div>
+    <div class="quiz-question">2023년 기온 편차는 약 얼마인가요? 그래프에서 찾아보세요!</div>
+    <div class="choices" id="ch0_3">
+      <button class="choice-btn" onclick="choiceAnswer('0_3',0)">① 약 +0.4°C</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_3',1)">② 약 +0.8°C</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_3',2)">③ 약 +1.2°C</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_3',3)">④ 약 +1.8°C</button>
+    </div>
+    <div class="attempts" id="att0_3"></div>
+    <div class="fb fb-wrong" id="fw0_3"><div class="fb-label">틀렸어요</div>그래프의 오른쪽 끝, 2023년 점을 찾아보세요. y축(세로축)에서 그 점의 값이 얼마인지 확인해요!</div>
+    <div class="fb fb-hint" id="fh0_3"><div class="fb-label">힌트</div>2023년 그래프 점은 y축에서 1.0과 1.5 사이에 있어요. 더 구체적으로는 1.0보다 조금 위!</div>
+    <div class="fb fb-correct" id="fc0_3"><div class="fb-label">정답!</div>정확해요! 2023년 기온 편차는 <span class="em">+1.17°C</span>예요. 산업화 이전보다 1도 이상 뜨거워진 거예요.</div>
+    <div><button class="retry-btn" id="rb0_3" onclick="retry('0_3')">다시 도전</button><button class="next-btn" id="nb0_3" onclick="nextQuiz('0_3','0_4')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q0-4 -->
+  <div class="quiz-card" id="q0_4" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q4</span><span class="q-type-badge">순서 맞추기</span></div>
+    <div class="quiz-question">다음 시기들을 <strong>기온 편차가 낮은 순서(차가운 순)</strong>에서 높은 순서(뜨거운 순)로 올바르게 나열한 것은?</div>
+    <div class="quiz-sub">그래프를 보고 각 시기의 편차를 비교해보세요.</div>
+    <div class="choices single" id="ch0_4">
+      <button class="choice-btn" onclick="choiceAnswer('0_4',0)">① 1850년 → 1950년 → 2000년 → 2023년</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_4',1)">② 1950년 → 1850년 → 2000년 → 2023년</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_4',2)">③ 1850년 → 2000년 → 1950년 → 2023년</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_4',3)">④ 2023년 → 2000년 → 1950년 → 1850년</button>
+    </div>
+    <div class="attempts" id="att0_4"></div>
+    <div class="fb fb-wrong" id="fw0_4"><div class="fb-label">틀렸어요</div>각 연도의 편차를 그래프에서 찾아 써보세요. 1850년: 약 −0.41°C, 1950년: 약 −0.10°C, 2000년: 약 +0.40°C, 2023년: 약 +1.17°C</div>
+    <div class="fb fb-hint" id="fh0_4"><div class="fb-label">힌트</div>편차가 낮을수록(음수) 차갑고, 높을수록(양수) 뜨거워요. −0.41 < −0.10 < +0.40 < +1.17 — 어떤 순서일까요?</div>
+    <div class="fb fb-correct" id="fc0_4"><div class="fb-label">정답!</div>맞아요! <span class="em">1850(−0.41) → 1950(−0.10) → 2000(+0.40) → 2023(+1.17)</span> 순으로 점점 뜨거워지고 있어요.</div>
+    <div><button class="retry-btn" id="rb0_4" onclick="retry('0_4')">다시 도전</button><button class="next-btn" id="nb0_4" onclick="nextQuiz('0_4','0_5')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q0-5 -->
+  <div class="quiz-card" id="q0_5" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q5</span><span class="q-type-badge">4지선다</span></div>
+    <div class="quiz-question">그래프의 모양을 가장 잘 설명한 것은 무엇인가요?</div>
+    <div class="choices single" id="ch0_5">
+      <button class="choice-btn" onclick="choiceAnswer('0_5',0)">① 일정하게 유지되다가 갑자기 뚝 떨어졌다</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_5',1)">② 오르락내리락 반복하며 전체적으로 변화 없다</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_5',2)">③ 처음엔 천천히 변하다가 최근으로 올수록 빠르게 상승한다</button>
+      <button class="choice-btn" onclick="choiceAnswer('0_5',3)">④ 1950년 이후 급격히 하락했다</button>
+    </div>
+    <div class="attempts" id="att0_5"></div>
+    <div class="fb fb-wrong" id="fw0_5"><div class="fb-label">틀렸어요</div>전체 기간 그래프를 다시 한 번 천천히 살펴봐요. 기온이 전반적으로 오르고 있나요, 내려가고 있나요?</div>
+    <div class="fb fb-hint" id="fh0_5"><div class="fb-label">힌트</div>1850년부터 1980년까지는 비교적 완만하고, 1980년 이후는 기울기가 훨씬 가팔라져요!</div>
+    <div class="fb fb-correct" id="fc0_5"><div class="fb-label">정답!</div>바로 그거예요! 이처럼 <span class="em">가속되는 상승</span> 패턴이 기후 과학자들이 경고하는 이유랍니다.</div>
+    <div><button class="retry-btn" id="rb0_5" onclick="retry('0_5')">다시 도전</button><button class="next-btn" id="nb0_5" onclick="finishStage(0)">다음 단계 →</button></div>
+  </div>
+</div>
+
+<!-- ══════════════ STAGE 1: 평균 계산 ══════════════ -->
+<div class="main screen" id="sc1">
+  <div class="stage-intro">
+    <div class="intro-icon">🧮</div>
+    <div>
+      <div class="intro-title">단계 2 — 평균 기온 계산</div>
+      <div class="intro-desc">구간별 평균 기온 편차를 계산하고 비교해봐요. 화면의 숫자들을 이용해서 직접 계산해보세요!</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <p style="font-size:13px;font-weight:600;margin-bottom:12px">구간별 평균 기온 편차</p>
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="avgChart" role="img" aria-label="구간별 평균 기온 편차 막대그래프">평균 기온 편차 데이터</canvas>
+    </div>
+    <div id="avgNums" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px"></div>
+  </div>
+
+  <div class="formula">
+    <strong>평균 공식:</strong> 평균 = (각 값의 합) ÷ (개수)<br>
+    예) 세 구간의 값이 −0.3, −0.1, +0.4이면 → 합 = 0.0, 평균 = 0.0 ÷ 3 = <strong>0.00°C</strong>
+  </div>
+
+  <!-- Q1-1 -->
+  <div class="quiz-card" id="q1_1">
+    <div class="quiz-top"><span class="q-badge">Q6</span><span class="q-type-badge">숫자 입력</span></div>
+    <div class="quiz-question">1850~1900년 구간 평균 기온 편차는 약 얼마인가요?</div>
+    <div class="quiz-sub">이 구간 데이터: −0.41, −0.34, −0.30, −0.23, −0.31, −0.26 (단위: °C)</div>
+    <div class="num-wrap">
+      <input class="num-input" type="number" id="ni1_1" step="0.01" placeholder="0.00"><span class="num-unit">°C</span>
+      <button class="num-submit" onclick="numAnswer('1_1', -0.31, 0.05)">확인</button>
+    </div>
+    <div class="attempts" id="att1_1"></div>
+    <div class="fb fb-wrong" id="fw1_1"><div class="fb-label">다시 계산해봐요</div>6개 숫자를 모두 더한 뒤 6으로 나눠보세요. 더할 때 음수에 주의하세요!</div>
+    <div class="fb fb-hint" id="fh1_1"><div class="fb-label">힌트</div>합계: (−0.41)+(−0.34)+(−0.30)+(−0.23)+(−0.31)+(−0.26) = <span class="em">−1.85</span><br>평균: −1.85 ÷ 6 ≒ ?</div>
+    <div class="fb fb-correct" id="fc1_1"><div class="fb-label">정답!</div>맞아요! 1850~1900년 평균은 약 <span class="em">−0.31°C</span>예요. 산업화 이전이라 기온이 낮았죠.</div>
+    <div><button class="retry-btn" id="rb1_1" onclick="retry('1_1')">다시 계산</button><button class="next-btn" id="nb1_1" onclick="nextQuiz('1_1','1_2')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q1-2 -->
+  <div class="quiz-card" id="q1_2" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q7</span><span class="q-type-badge">숫자 입력</span></div>
+    <div class="quiz-question">1990~2023년 평균(약 +0.59°C)과 1850~1900년 평균(약 −0.31°C)의 <strong>차이</strong>는 얼마인가요?</div>
+    <div class="quiz-sub">두 수를 빼면 돼요. 음수를 빼는 것에 주의!</div>
+    <div class="num-wrap">
+      <input class="num-input" type="number" id="ni1_2" step="0.01" placeholder="0.00"><span class="num-unit">°C</span>
+      <button class="num-submit" onclick="numAnswer('1_2', 0.90, 0.05)">확인</button>
+    </div>
+    <div class="attempts" id="att1_2"></div>
+    <div class="fb fb-wrong" id="fw1_2"><div class="fb-label">다시 계산해봐요</div>0.59 − (−0.31)을 계산해보세요. 음수를 빼면 어떻게 될까요?</div>
+    <div class="fb fb-hint" id="fh1_2"><div class="fb-label">힌트</div>음수를 빼면 더하기가 돼요!<br>0.59 − (−0.31) = 0.59 + 0.31 = <span class="em">?</span></div>
+    <div class="fb fb-correct" id="fc1_2"><div class="fb-label">정답!</div>맞아요! <span class="em">약 0.90°C 차이</span>예요. 겨우 1°C가 안 되는 차이처럼 보이지만, 지구 전체에는 엄청난 변화랍니다!</div>
+    <div><button class="retry-btn" id="rb1_2" onclick="retry('1_2')">다시 계산</button><button class="next-btn" id="nb1_2" onclick="nextQuiz('1_2','1_3')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q1-3 -->
+  <div class="quiz-card" id="q1_3" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q8</span><span class="q-type-badge">4지선다</span></div>
+    <div class="quiz-question">막대그래프를 보면, 평균 기온 편차가 <strong>처음으로 양수(+)</strong>가 된 구간은 어디인가요?</div>
+    <div class="choices" id="ch1_3">
+      <button class="choice-btn" onclick="choiceAnswer('1_3',0)">① 1850~1900년</button>
+      <button class="choice-btn" onclick="choiceAnswer('1_3',1)">② 1900~1950년</button>
+      <button class="choice-btn" onclick="choiceAnswer('1_3',2)">③ 1950~1990년</button>
+      <button class="choice-btn" onclick="choiceAnswer('1_3',3)">④ 1990~2023년</button>
+    </div>
+    <div class="attempts" id="att1_3"></div>
+    <div class="fb fb-wrong" id="fw1_3"><div class="fb-label">틀렸어요</div>막대그래프에서 각 구간의 값이 양수(+)인지 음수(−)인지 확인해보세요!</div>
+    <div class="fb fb-hint" id="fh1_3"><div class="fb-label">힌트</div>1850~1900년: −0.31, 1900~1950년: −0.18, 1950~1990년: +0.09, 1990~2023년: +0.59 — 처음으로 양수가 된 건?</div>
+    <div class="fb fb-correct" id="fc1_3"><div class="fb-label">정답!</div>맞아요! <span class="em">1950~1990년</span> 구간에서 처음으로 평균이 양수(+0.09°C)가 됐어요. 이때부터 기온이 기준선을 넘기 시작한 거예요.</div>
+    <div><button class="retry-btn" id="rb1_3" onclick="retry('1_3')">다시 도전</button><button class="next-btn" id="nb1_3" onclick="nextQuiz('1_3','1_4')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q1-4 -->
+  <div class="quiz-card" id="q1_4" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q9</span><span class="q-type-badge">OX 퀴즈</span></div>
+    <div class="quiz-question">지구 평균 기온이 1°C 오르는 것은 우리 일상에서는 거의 느낄 수 없기 때문에, 환경적으로도 별로 문제가 되지 않는다.</div>
+    <div class="ox-wrap" id="ox1_4">
+      <button class="ox-btn" onclick="oxAnswer('1_4','O')">⭕ 맞다</button>
+      <button class="ox-btn" onclick="oxAnswer('1_4','X')">❌ 틀리다</button>
+    </div>
+    <div class="attempts" id="att1_4"></div>
+    <div class="fb fb-wrong" id="fw1_4"><div class="fb-label">틀렸어요</div>지구 전체 평균 기온이 1°C 오르는 건 어마어마한 에너지가 필요한 변화예요. 다시 생각해봐요!</div>
+    <div class="fb fb-hint" id="fh1_4"><div class="fb-label">힌트</div>마지막 빙하기 때 지구 평균 기온은 지금보다 고작 4~5°C 낮았어요. 그때 한국엔 빙하가 덮여 있었답니다!</div>
+    <div class="fb fb-correct" id="fc1_4"><div class="fb-label">정답!</div>맞아요! 틀리다가 정답이에요. <span class="em">평균 1°C</span>는 해수면 상승, 폭염·한파 증가, 산호초 소멸 등 엄청난 변화를 일으켜요.</div>
+    <div><button class="retry-btn" id="rb1_4" onclick="retry('1_4')">다시 도전</button><button class="next-btn" id="nb1_4" onclick="finishStage(1)">다음 단계 →</button></div>
+  </div>
+</div>
+
+<!-- ══════════════ STAGE 2: 변화율 ══════════════ -->
+<div class="main screen" id="sc2">
+  <div class="stage-intro">
+    <div class="intro-icon">⚡</div>
+    <div>
+      <div class="intro-title">단계 3 — 변화율 비교</div>
+      <div class="intro-desc">기온이 오르는 것도 중요하지만, 얼마나 <strong>빠르게</strong> 오르는지도 중요해요. 변화율을 계산하고 미래를 예측해봐요!</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="rateChart" role="img" aria-label="구간별 10년당 기온 변화율 막대그래프">변화율 데이터</canvas>
+    </div>
+  </div>
+
+  <div class="formula">
+    <strong>변화율(10년당) 공식:</strong><br>
+    변화율 = (끝 편차 − 시작 편차) ÷ 기간(년) × 10<br>
+    예) (0.40 − 0.18) ÷ 20년 × 10 = <strong>+0.11°C / 10년</strong>
+  </div>
+
+  <!-- Q2-1 -->
+  <div class="quiz-card" id="q2_1">
+    <div class="quiz-top"><span class="q-badge">Q10</span><span class="q-type-badge">숫자 입력</span></div>
+    <div class="quiz-question">1950~1980년의 10년당 변화율을 계산해보세요.</div>
+    <div class="quiz-sub">시작(1950년): −0.10°C / 끝(1980년): +0.18°C / 기간: 30년</div>
+    <div class="num-wrap">
+      <input class="num-input" type="number" id="ni2_1" step="0.01" placeholder="0.00"><span class="num-unit">°C / 10년</span>
+      <button class="num-submit" onclick="numAnswer('2_1', 0.093, 0.02)">확인</button>
+    </div>
+    <div class="attempts" id="att2_1"></div>
+    <div class="fb fb-wrong" id="fw2_1"><div class="fb-label">다시 계산해봐요</div>공식: (0.18 − (−0.10)) ÷ 30 × 10 을 차례로 계산해보세요!</div>
+    <div class="fb fb-hint" id="fh2_1"><div class="fb-label">힌트</div>0.18 − (−0.10) = 0.28<br>0.28 ÷ 30 × 10 = <span class="em">0.093</span></div>
+    <div class="fb fb-correct" id="fc2_1"><div class="fb-label">정답!</div>맞아요! 1950~1980년 변화율은 <span class="em">약 0.09°C / 10년</span>이에요.</div>
+    <div><button class="retry-btn" id="rb2_1" onclick="retry('2_1')">다시 계산</button><button class="next-btn" id="nb2_1" onclick="nextQuiz('2_1','2_2')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q2-2 -->
+  <div class="quiz-card" id="q2_2" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q11</span><span class="q-type-badge">4지선다</span></div>
+    <div class="quiz-question">막대그래프를 보면, 변화율이 가장 빠른 구간은 어디인가요?</div>
+    <div class="choices" id="ch2_2">
+      <button class="choice-btn" onclick="choiceAnswer('2_2',0)">① 1850~1900년</button>
+      <button class="choice-btn" onclick="choiceAnswer('2_2',1)">② 1950~1980년</button>
+      <button class="choice-btn" onclick="choiceAnswer('2_2',2)">③ 1980~2000년</button>
+      <button class="choice-btn" onclick="choiceAnswer('2_2',3)">④ 2000~2023년</button>
+    </div>
+    <div class="attempts" id="att2_2"></div>
+    <div class="fb fb-wrong" id="fw2_2"><div class="fb-label">틀렸어요</div>막대그래프에서 가장 높은 막대를 찾아보세요!</div>
+    <div class="fb fb-hint" id="fh2_2"><div class="fb-label">힌트</div>2000~2023년 변화율 = (1.17 − 0.40) ÷ 23 × 10 ≒ 0.335°C / 10년 — 가장 높아요!</div>
+    <div class="fb fb-correct" id="fc2_2"><div class="fb-label">정답!</div>맞아요! <span class="em">2000~2023년</span>이 약 0.335°C/10년으로 가장 빠른 구간이에요. 우리가 살고 있는 지금이 가장 빠른 속도예요!</div>
+    <div><button class="retry-btn" id="rb2_2" onclick="retry('2_2')">다시 도전</button><button class="next-btn" id="nb2_2" onclick="nextQuiz('2_2','2_3')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q2-3 -->
+  <div class="quiz-card" id="q2_3" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q12</span><span class="q-type-badge">숫자 입력</span></div>
+    <div class="quiz-question">2000~2023년 속도(약 0.335°C/10년)가 계속된다면, <strong>2050년</strong> 기온 편차는 약 몇 °C가 될까요?</div>
+    <div class="quiz-sub">2023년 현재 편차는 +1.17°C이고, 2050년까지는 27년이 남았어요.</div>
+    <div class="formula" style="margin-bottom:12px">예측값 = 현재 편차 + (남은 년수 × 연간 변화율)<br>연간 변화율 = 0.335 ÷ 10 = 0.0335°C/년</div>
+    <div class="num-wrap">
+      <input class="num-input" type="number" id="ni2_3" step="0.01" placeholder="0.00"><span class="num-unit">°C</span>
+      <button class="num-submit" onclick="numAnswer('2_3', 2.07, 0.15)">확인</button>
+    </div>
+    <div class="attempts" id="att2_3"></div>
+    <div class="fb fb-wrong" id="fw2_3"><div class="fb-label">다시 계산해봐요</div>1.17 + (27 × 0.0335)를 계산해보세요!</div>
+    <div class="fb fb-hint" id="fh2_3"><div class="fb-label">힌트</div>27 × 0.0335 ≒ 0.90<br>1.17 + 0.90 = <span class="em">?</span></div>
+    <div class="fb fb-correct" id="fc2_3"><div class="fb-label">정답!</div>맞아요! 약 <span class="em">+2.07°C</span>! 파리협정 목표인 1.5°C를 훨씬 초과해요. 지금 속도를 줄이지 않으면 이렇게 됩니다!</div>
+    <div><button class="retry-btn" id="rb2_3" onclick="retry('2_3')">다시 계산</button><button class="next-btn" id="nb2_3" onclick="nextQuiz('2_3','2_4')">다음 문제 →</button></div>
+  </div>
+
+  <!-- Q2-4 -->
+  <div class="quiz-card" id="q2_4" style="display:none">
+    <div class="quiz-top"><span class="q-badge">Q13</span><span class="q-type-badge">슬라이더</span></div>
+    <div class="quiz-question">파리협정 목표는 기온 상승을 <strong>+1.5°C 이내</strong>로 제한하는 거예요. 지금 편차(+1.17°C)에서 얼마나 더 오를 수 있을까요?</div>
+    <div class="quiz-sub">슬라이더를 움직여서 1.5 − 1.17의 답을 구해보세요!</div>
+    <div class="slider-wrap">
+      <div class="slider-row">
+        <input type="range" min="0" max="1" step="0.01" value="0.33" id="sl2_4" oninput="document.getElementById('sv2_4').textContent=parseFloat(this.value).toFixed(2)">
+        <span class="slider-val" id="sv2_4">0.33</span><span class="num-unit">°C</span>
+      </div>
+      <div class="slider-labels"><span>0°C</span><span>+0.5°C</span><span>+1.0°C</span></div>
+      <button class="slider-submit" onclick="sliderAnswer('2_4', 0.33, 0.05)">확인</button>
+    </div>
+    <div class="attempts" id="att2_4"></div>
+    <div class="fb fb-wrong" id="fw2_4"><div class="fb-label">다시 해봐요</div>1.5 − 1.17을 직접 계산해서 슬라이더를 그 값에 맞춰보세요!</div>
+    <div class="fb fb-hint" id="fh2_4"><div class="fb-label">힌트</div>1.50 − 1.17 = <span class="em">0.33°C</span> — 이 작은 차이만 남아 있어요!</div>
+    <div class="fb fb-correct" id="fc2_4"><div class="fb-label">정답!</div>딱 <span class="em">0.33°C</span>밖에 남지 않았어요! 우리가 예측한 2050년 값(+2.07°C)이 되기 전에 이 한계를 지켜야 해요.</div>
+    <div><button class="retry-btn" id="rb2_4" onclick="retry('2_4')">다시 해봐요</button><button class="next-btn" id="nb2_4" onclick="finishStage(2)">다음 단계 →</button></div>
+  </div>
+</div>
+
+<!-- ══════════════ STAGE 3: 생각 나누기 ══════════════ -->
+<div class="main screen" id="sc3">
+  <div class="stage-intro">
+    <div class="intro-icon">💬</div>
+    <div>
+      <div class="intro-title">단계 4 — 생각 나누기</div>
+      <div class="intro-desc">지금까지 배운 것을 바탕으로 더 깊이 생각해봐요. 정답이 없는 질문이에요 — 자신의 생각을 자유롭게 써보세요!</div>
+    </div>
+  </div>
+
+  <!-- 토론 주제 선택 -->
+  <div class="reflect-card">
+    <div class="reflect-title">🗂️ 탐구 주제 선택</div>
+    <div class="reflect-desc">아래 주제 중 <strong>가장 관심 있는 것</strong>을 하나 골라보세요. 선택하면 관련 질문들이 나와요!</div>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="selectTopic(0)">
+        <div class="tc-icon">🌊</div>
+        <div class="tc-title">해수면과 빙하</div>
+        <div class="tc-desc">기온 상승이 바다와 빙하에 미치는 영향</div>
+      </div>
+      <div class="topic-card" onclick="selectTopic(1)">
+        <div class="tc-icon">🌀</div>
+        <div class="tc-title">이상기후와 재난</div>
+        <div class="tc-desc">폭염·한파·태풍과 기온의 관계</div>
+      </div>
+      <div class="topic-card" onclick="selectTopic(2)">
+        <div class="tc-icon">🏭</div>
+        <div class="tc-title">탄소 배출과 산업</div>
+        <div class="tc-desc">인간 활동이 기온 변화를 일으키는 이유</div>
+      </div>
+      <div class="topic-card" onclick="selectTopic(3)">
+        <div class="tc-icon">🌱</div>
+        <div class="tc-title">해결책과 기술</div>
+        <div class="tc-desc">기후 변화를 막기 위한 기술과 생활 실천</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 주제별 질문들 (처음엔 숨김) -->
+  <div id="topicQuestions" style="display:none">
+
+    <!-- 항상 나오는 공통 질문들 -->
+    <div class="reflect-card">
+      <div class="reflect-title">📊 수학으로 정리하기</div>
+      <div class="reflect-desc">오늘 계산한 결과를 바탕으로 답해봐요.</div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Q14. 오늘 계산한 것 중 가장 놀라웠던 숫자는 무엇이고, 왜 놀라웠나요?</div>
+        <textarea class="reflect-textarea" id="r1" placeholder="나는 ___ 이라는 숫자가 놀라웠다. 왜냐하면..." oninput="updateChar('r1','rc1',200)"></textarea>
+        <div class="char-counter" id="rc1">0 / 200자</div>
+      </div>
+
+      <div style="margin-bottom:0">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Q15. 2050년 기온이 +2°C가 된다면, 한국에서 어떤 변화가 생길까요? 아는 것을 모두 써보세요.</div>
+        <textarea class="reflect-textarea" id="r2" placeholder="예) 여름이 더 길어지고, 제주도 산호초가 사라지고..." oninput="updateChar('r2','rc2',300)" style="min-height:90px"></textarea>
+        <div class="char-counter" id="rc2">0 / 300자</div>
+      </div>
+    </div>
+
+    <!-- 주제별 심화 질문 -->
+    <div class="reflect-card" id="topicDeep">
+      <div class="reflect-title" id="topicDeepTitle">🔍 심화 탐구</div>
+      <div id="topicDeepContent"></div>
+    </div>
+
+    <!-- 나의 실천 계획 -->
+    <div class="reflect-card">
+      <div class="reflect-title">✏️ 수학으로 표현하는 나의 실천</div>
+      <div class="reflect-desc">내가 할 수 있는 환경 실천을 <strong>숫자로 표현</strong>해봐요. 정확하지 않아도 괜찮아요 — 어림잡아도 돼요!</div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Q18. 내가 매일 할 수 있는 한 가지 실천을 골라, 1년 동안의 효과를 수식으로 써보세요.</div>
+        <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px">힌트: 전기 절약, 대중교통 이용, 분리수거, 채식 등 — 어떤 것이든 좋아요!</div>
+        <textarea class="reflect-textarea" id="r3" placeholder="예) 하루에 샤워 2분 줄이기 × 365일 = 연간 약 ___L 절약 = CO₂ ___kg 감소" oninput="updateChar('r3','rc3',250)" style="min-height:90px"></textarea>
+        <div class="char-counter" id="rc3">0 / 250자</div>
+      </div>
+
+      <div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">Q19. 우리 반 30명이 모두 같은 실천을 한다면 효과가 얼마나 커질까요?</div>
+        <textarea class="reflect-textarea" id="r4" placeholder="Q18의 내 효과 × 30명 = 반 전체 효과: ..." oninput="updateChar('r4','rc4',200)"></textarea>
+        <div class="char-counter" id="rc4">0 / 200자</div>
+      </div>
+    </div>
+
+    <!-- 마지막 한 문장 -->
+    <div class="reflect-card" style="background:var(--green-ll);border-color:#86efac">
+      <div class="reflect-title">🎯 오늘의 마무리</div>
+      <div class="reflect-desc">수학으로 분석한 내용을 바탕으로, 주변 사람에게 기후 변화의 심각성을 설득하는 <strong>한 문장</strong>을 써보세요!</div>
+      <div style="font-size:13px;color:var(--gray-600);margin-bottom:10px">숫자와 근거를 꼭 포함해야 해요.</div>
+      <textarea class="reflect-textarea" id="r5" placeholder='예) "지금 속도라면 2050년 기온은 +2°C에 달하는데, 이는 해수면을 ___m 올리고..."' oninput="updateChar('r5','rc5',300)" style="min-height:90px"></textarea>
+      <div class="char-counter" id="rc5">0 / 300자</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-nav btn-secondary" onclick="goStage(2)">← 이전 단계</button>
+      <button class="btn-nav btn-primary" onclick="showComplete()">완성! 제출하기 ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ COMPLETE ══════════════ -->
+<div class="main screen" id="scComplete">
+  <div class="reflect-card">
+    <div class="complete-wrap">
+      <div class="complete-icon">🌍</div>
+      <h2>탐구 완료!</h2>
+      <div class="score-display">
+        <div class="sc-num" id="finalScore">0</div>
+        <div class="sc-label">/ <span id="sc-total">13</span>문제 정답</div>
+      </div>
+      <p>수고했어요! 아래 버튼을 눌러 내 답변을 복사한 뒤,<br>선생님이 안내한 곳에 붙여넣기해서 제출하세요.</p>
+      <div class="answer-preview" id="ansPreview"></div>
+      <button class="copy-btn" onclick="copyAll()">📋 내 답변 전체 복사하기</button>
+      <p style="font-size:12px;color:var(--gray-400);margin-top:10px">복사가 안 될 경우 버튼을 다시 눌러보세요</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── 데이터 ── */
+const raw = [
+  {y:1850,v:-0.41},{y:1860,v:-0.34},{y:1870,v:-0.30},{y:1880,v:-0.23},
+  {y:1890,v:-0.31},{y:1900,v:-0.26},{y:1910,v:-0.35},{y:1920,v:-0.22},
+  {y:1930,v:-0.09},{y:1940,v:0.02},{y:1950,v:-0.10},{y:1960,v:-0.02},
+  {y:1970,v:0.02},{y:1980,v:0.18},{y:1990,v:0.37},{y:2000,v:0.40},
+  {y:2010,v:0.57},{y:2020,v:0.82},{y:2023,v:1.17}
+];
+const periods=[
+  {label:'1850~\n1900년',s:1850,e:1900},
+  {label:'1900~\n1950년',s:1900,e:1950},
+  {label:'1950~\n1990년',s:1950,e:1990},
+  {label:'1990~\n2023년',s:1990,e:2023}
+];
+const rateSegs=[
+  {label:'1850~1900',s:-0.41,e:-0.26,y:50},
+  {label:'1900~1950',s:-0.26,e:-0.10,y:50},
+  {label:'1950~1980',s:-0.10,e:0.18,y:30},
+  {label:'1980~2000',s:0.18,e:0.40,y:20},
+  {label:'2000~2023',s:0.40,e:1.17,y:23}
+];
+const topicData=[
+  {
+    title:'🌊 해수면과 빙하',
+    qs:[
+      {id:'td0_1',q:'Q16. 북극 빙하가 녹으면 해수면이 올라가요. 만약 해수면이 1m 오른다면, 한국의 어떤 지역이 영향을 받을까요? 알고 있는 것을 써보세요.',ph:'해안가, 저지대 도시...'},
+      {id:'td0_2',q:'Q17. 기온이 2°C 오를 때 빙하가 녹는 속도도 빨라진다면, 이것도 "변화율이 증가하는" 상황일까요? 수학적으로 어떻게 표현할 수 있을지 생각해봐요.',ph:'변화율 = ... × 기온 변화 ...'}
+    ]
+  },
+  {
+    title:'🌀 이상기후와 재난',
+    qs:[
+      {id:'td1_1',q:'Q16. 한국에서 최근 10년 동안 폭염 일수가 늘어났다면, 이것과 기온 변화 그래프는 어떤 관계가 있을까요?',ph:'기온이 오를수록 폭염 일수도...'},
+      {id:'td1_2',q:'Q17. 만약 10년마다 폭염 일수가 2일씩 늘어난다면, 2050년에는 지금보다 몇 일이나 더 늘어날까요? 계산해보세요.',ph:'현재까지 ___년 × 2일/10년 = ___일 증가'}
+    ]
+  },
+  {
+    title:'🏭 탄소 배출과 산업',
+    qs:[
+      {id:'td2_1',q:'Q16. 1950년 이후부터 기온 상승 속도가 빨라진 이유가 뭘까요? 알고 있는 것을 모두 써보세요.',ph:'산업화, 자동차 증가, 공장...'},
+      {id:'td2_2',q:'Q17. 전 세계가 탄소 배출을 매년 5%씩 줄인다면, 10년 후에는 지금의 몇 %가 남아있을까요? 계산해봐요.',ph:'100% × (1-0.05)^10 ≒ ?%'}
+    ]
+  },
+  {
+    title:'🌱 해결책과 기술',
+    qs:[
+      {id:'td3_1',q:'Q16. 태양광 패널 1개가 하루에 전기 3kWh를 생산하고, 전기 1kWh당 CO₂ 0.5kg을 줄일 수 있다면, 1년에 CO₂를 얼마나 줄일 수 있나요?',ph:'3kWh × 365일 × 0.5kg = ___kg'},
+      {id:'td3_2',q:'Q17. 우리 학교에 태양광 패널 10개를 설치한다면 1년에 CO₂를 몇 kg이나 줄일 수 있을까요? 앞의 계산을 활용해봐요.',ph:'Q16 결과 × 10개 = ___kg'}
+    ]
+  }
+];
+
+/* ── localStorage 저장/복원 ── */
+const LS_KEY='climate_lesson1';
+function saveProgress(){
+  const data={
+    state:{stage:state.stage,correct:state.correct,attempts:state.attempts,selectedTopic:state.selectedTopic},
+    name:document.getElementById('sname').value,
+    quizDone:{},
+    quizVisible:{},
+    textAnswers:{}
+  };
+  // 퀴즈 완료 여부 & 표시 여부 저장
+  document.querySelectorAll('.quiz-card').forEach(el=>{
+    const id=el.id.replace('q','');
+    data.quizDone[id]=el.dataset.done==='1';
+    data.quizVisible[id]=el.style.display!=='none';
+  });
+  // 텍스트 답변 저장
+  document.querySelectorAll('textarea,input[type=number]').forEach(el=>{
+    if(el.id)data.textAnswers[el.id]=el.value;
+  });
+  try{localStorage.setItem(LS_KEY,JSON.stringify(data));}catch(e){}
+}
+function loadProgress(){
+  let data;
+  try{data=JSON.parse(localStorage.getItem(LS_KEY));}catch(e){return;}
+  if(!data)return;
+  // 이름
+  if(data.name)document.getElementById('sname').value=data.name;
+  // state 복원
+  if(data.state){
+    state.correct=data.state.correct||0;
+    state.attempts=data.state.attempts||{};
+    state.selectedTopic=data.state.selectedTopic||-1;
+  }
+  // 텍스트 답변 복원
+  if(data.textAnswers){
+    Object.entries(data.textAnswers).forEach(([id,val])=>{
+      const el=document.getElementById(id);
+      if(el)el.value=val;
+    });
+  }
+  // 퀴즈 표시/완료 상태 복원
+  if(data.quizDone){
+    Object.entries(data.quizDone).forEach(([id,done])=>{
+      const card=document.getElementById('q'+id);
+      if(!card)return;
+      const visible=data.quizVisible&&data.quizVisible[id];
+      card.style.display=visible?'block':'none';
+      if(done){
+        card.dataset.done='1';
+        // 피드백 정답 표시, 버튼 비활성화
+        const fc=document.getElementById('fc'+id);if(fc)fc.classList.add('show');
+        const nb=document.getElementById('nb'+id);if(nb)nb.classList.add('show');
+        const rb=document.getElementById('rb'+id);if(rb)rb.classList.remove('show');
+        card.querySelectorAll('button,input').forEach(el=>{
+          if(!el.classList.contains('next-btn')&&!el.classList.contains('retry-btn'))el.disabled=true;
+        });
+      }
+    });
+  }
+  // 심화 주제 복원
+  if(state.selectedTopic>=0){
+    const td=topicData[state.selectedTopic];
+    document.querySelectorAll('.topic-card').forEach((c,i)=>c.classList.toggle('selected',i===state.selectedTopic));
+    document.getElementById('topicDeepTitle').textContent=td.title+' 심화 탐구';
+    document.getElementById('topicDeepContent').innerHTML=td.qs.map(q=>`
+      <div style="margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px">${q.q}</div>
+        <textarea class="reflect-textarea" id="${q.id}" placeholder="${q.ph}" oninput="updateChar('${q.id}','${q.id}c',250);saveProgress()" style="min-height:80px"></textarea>
+        <div class="char-counter" id="${q.id}c">0 / 250자</div>
+      </div>`).join('');
+    document.getElementById('topicQuestions').style.display='block';
+    // 심화 텍스트도 복원
+    if(data.textAnswers){
+      td.qs.forEach(q=>{
+        const el=document.getElementById(q.id);
+        if(el&&data.textAnswers[q.id])el.value=data.textAnswers[q.id];
+      });
+    }
+  }
+  // 단계 이동
+  const savedStage=data.state&&data.state.stage?data.state.stage:0;
+  if(savedStage>0)goStage(savedStage);
+}
+
+/* ── 상태 ── */
+const state={
+  stage:0,
+  correct:0,
+  attempts:{},
+  reflections:{},
+  selectedTopic:-1
+};
+
+const stageQuizzes={0:['0_1','0_2','0_3','0_4','0_5'],1:['1_1','1_2','1_3','1_4'],2:['2_1','2_2','2_3','2_4'],3:[]};
+const correctAnswers={
+  '0_1':2,'0_2':'O','0_3':2,'0_4':0,'0_5':2,
+  '1_3':2,'1_4':'X','2_2':3
+};
+const TOTAL_QUIZ=13;
+
+/* ── 퀴즈 진행 도트 ── */
+function updateDots(stage){
+  const qs=stageQuizzes[stage];
+  if(!qs||qs.length===0){document.getElementById('qprogRow').style.display='none';return;}
+  document.getElementById('qprogRow').style.display='flex';
+  const dots=document.getElementById('qprogDots');
+  dots.innerHTML=qs.map((id)=>{
+    const el=document.getElementById('q'+id);
+    const isDone=el&&el.dataset.done==='1';
+    const isVisible=el&&el.style.display!=='none';
+    const isActive=isVisible&&!isDone;
+    return`<span class="qdot ${isDone?'done':isActive?'active':''}"></span>`;
+  }).join('');
+}
+
+/* ── 완료된 단계만 탭 클릭 허용 ── */
+function goDoneStage(n){
+  const tab=document.getElementById('stab'+n);
+  if(tab&&(tab.classList.contains('done')||tab.classList.contains('active')))goStage(n);
+}
+
+/* ── 스테이지 이동 ── */
+function goStage(n){
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.stage-tab').forEach((el,i)=>{
+    el.classList.remove('active','done');
+    if(i<n)el.classList.add('done');
+  });
+  const scEl=document.getElementById('sc'+n);
+  if(scEl)scEl.classList.add('active');
+  const tabEl=document.getElementById('stab'+n);
+  if(tabEl)tabEl.classList.add('active');
+  state.stage=n;
+  updateDots(n);
+  if(n===1&&!document.getElementById('avgChart').dataset.built){buildAvgChart();document.getElementById('avgChart').dataset.built='1';}
+  if(n===2&&!document.getElementById('rateChart').dataset.built){buildRateChart();document.getElementById('rateChart').dataset.built='1';}
+  saveProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finishStage(n){goStage(n+1);}
+
+/* ── 다음 퀴즈 표시 ── */
+function nextQuiz(cur,next){
+  const curEl=document.getElementById('q'+cur);
+  curEl.dataset.done='1';
+  const nextEl=document.getElementById('q'+next);
+  if(nextEl){
+    nextEl.style.display='block';
+    setTimeout(()=>nextEl.scrollIntoView({behavior:'smooth',block:'start'}),100);
+  }
+  updateDots(state.stage);
+}
+
+/* ── 시도 횟수 UI ── */
+function getAttempts(id){return state.attempts[id]||0;}
+function incAttempts(id){state.attempts[id]=(state.attempts[id]||0)+1;return state.attempts[id];}
+function showAttemptDots(id,max=3){
+  const n=getAttempts(id);
+  const dots=Array.from({length:max},(_,i)=>`<span class="attempt-dot${i<n?' used':''}"></span>`).join('');
+  const el=document.getElementById('att'+id);
+  if(el)el.innerHTML=`남은 기회: ${dots}`;
+}
+
+function showFb(id,type){
+  ['fw','fh','fc'].forEach(p=>{const el=document.getElementById(p+id);if(el){el.classList.remove('show');}});
+  const el=document.getElementById(type+id);
+  if(el)el.classList.add('show');
+}
+
+function giveUp(id,finalFb){
+  showFb(id,'fc');
+  document.getElementById('rb'+id).classList.remove('show');
+  document.getElementById('nb'+id).classList.add('show');
+  disableInputs(id);
+}
+
+function disableInputs(id){
+  const card=document.getElementById('q'+id);
+  if(!card)return;
+  card.querySelectorAll('button,input,select').forEach(el=>{
+    if(!el.classList.contains('next-btn')&&!el.classList.contains('retry-btn'))el.disabled=true;
+  });
+}
+
+function markCorrect(id){
+  state.correct++;
+  showFb(id,'fc');
+  document.getElementById('rb'+id)&&document.getElementById('rb'+id).classList.remove('show');
+  document.getElementById('nb'+id).classList.add('show');
+  disableInputs(id);
+  const card=document.getElementById('q'+id);
+  if(card){card.classList.add('correct-flash');}
+  saveProgress();
+}
+
+function markWrong(id,att){
+  showAttemptDots(id);
+  const card=document.getElementById('q'+id);
+  if(card){card.classList.add('wrong-flash');setTimeout(()=>card.classList.remove('wrong-flash'),600);}
+  if(att===1){showFb(id,'fw');}
+  else if(att===2){showFb(id,'fh');document.getElementById('rb'+id)&&document.getElementById('rb'+id).classList.add('show');}
+  else{giveUp(id);}
+}
+
+function retry(id){
+  showFb(id,'');
+  const card=document.getElementById('q'+id);
+  card.querySelectorAll('button,input').forEach(el=>{
+    if(!el.classList.contains('next-btn'))el.disabled=false;
+    el.classList.remove('selected','correct','wrong');
+  });
+}
+
+/* ── 4지선다 ── */
+function choiceAnswer(id,idx){
+  const att=incAttempts(id);
+  const btns=document.getElementById('ch'+id).querySelectorAll('.choice-btn');
+  btns.forEach(b=>b.classList.remove('selected'));
+  btns[idx].classList.add('selected');
+  btns.forEach(b=>b.disabled=true);
+  if(idx===correctAnswers[id]){
+    btns[idx].classList.add('correct');
+    markCorrect(id);
+  } else {
+    btns[idx].classList.add('wrong');
+    if(att<3){setTimeout(()=>{btns.forEach(b=>{b.disabled=false;b.classList.remove('selected','wrong');});},800);}
+    markWrong(id,att);
+  }
+}
+
+/* ── OX ── */
+function oxAnswer(id,ans){
+  const att=incAttempts(id);
+  const btns=document.getElementById('ox'+id).querySelectorAll('.ox-btn');
+  btns.forEach(b=>b.classList.remove('selected'));
+  const sel=ans==='O'?btns[0]:btns[1];
+  sel.classList.add('selected');
+  btns.forEach(b=>b.disabled=true);
+  if(ans===correctAnswers[id]){
+    sel.classList.add('correct');
+    markCorrect(id);
+  } else {
+    sel.classList.add('wrong');
+    if(att<3){setTimeout(()=>{btns.forEach(b=>{b.disabled=false;b.classList.remove('selected','wrong');});},800);}
+    markWrong(id,att);
+  }
+}
+
+/* ── 숫자 입력 ── */
+function numAnswer(id,correct,tol){
+  const att=incAttempts(id);
+  const val=parseFloat(document.getElementById('ni'+id).value);
+  if(isNaN(val)){alert('숫자를 입력해주세요!');return;}
+  if(Math.abs(val-correct)<=tol){
+    markCorrect(id);
+  } else {
+    document.getElementById('ni'+id).value='';
+    markWrong(id,att);
+  }
+}
+
+/* ── 슬라이더 ── */
+function sliderAnswer(id,correct,tol){
+  const att=incAttempts(id);
+  const val=parseFloat(document.getElementById('sl'+id).value);
+  if(Math.abs(val-correct)<=tol){
+    markCorrect(id);
+  } else {
+    markWrong(id,att);
+  }
+}
+
+/* ── 차트 ── */
+let tempInst=null;
+function buildTempChart(view){
+  let src=raw;
+  if(view==='early')src=raw.filter(d=>d.y<=1950);
+  if(view==='modern')src=raw.filter(d=>d.y>=1950);
+  const ptC=src.map(d=>d.v>0.8?'#D85A30':d.v>0.4?'#EF9F27':d.v>0?'#2563EB':'#6366f1');
+  const ctx=document.getElementById('tempChart');
+  if(tempInst)tempInst.destroy();
+  tempInst=new Chart(ctx,{
+    type:'line',
+    data:{labels:src.map(d=>d.y),datasets:[{label:'기온 편차(°C)',data:src.map(d=>d.v),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,0.07)',pointBackgroundColor:ptC,pointRadius:6,pointHoverRadius:8,tension:0.3,fill:true,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`편차: ${c.raw.toFixed(2)}°C`}}},scales:{x:{ticks:{color:'#6B7280',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},y:{ticks:{color:'#6B7280',font:{size:11},callback:v=>`${v.toFixed(1)}°C`},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+}
+function setView(v,el){document.querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');buildTempChart(v);}
+
+function avg(s,e){const d=raw.filter(r=>r.y>=s&&r.y<=e);return d.reduce((a,b)=>a+b.v,0)/d.length;}
+function buildAvgChart(){
+  const avgs=periods.map(p=>avg(p.s,p.e));
+  const nums=document.getElementById('avgNums');
+  nums.innerHTML=periods.map((p,i)=>`<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#9CA3AF">${p.label.replace('\n',' ')}</div><div style="font-size:20px;font-weight:700;color:${avgs[i]>0?'#D85A30':'#2563EB'}">${avgs[i].toFixed(2)}°C</div></div>`).join('');
+  new Chart(document.getElementById('avgChart'),{
+    type:'bar',
+    data:{labels:periods.map(p=>p.label.replace('\n',' ')),datasets:[{label:'평균 기온 편차',data:avgs,backgroundColor:avgs.map(v=>v>0.4?'#D85A30':v>0?'#EF9F27':'#2563EB'),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`평균: ${c.raw.toFixed(2)}°C`}}},scales:{x:{ticks:{color:'#6B7280',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#6B7280',font:{size:11},callback:v=>`${v.toFixed(1)}°C`},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+}
+function buildRateChart(){
+  const rates=rateSegs.map(d=>(d.e-d.s)/d.y*10);
+  const maxR=Math.max(...rates);
+  new Chart(document.getElementById('rateChart'),{
+    type:'bar',
+    data:{labels:rateSegs.map(d=>d.label),datasets:[{label:'변화율(°C/10년)',data:rates,backgroundColor:rates.map(r=>Math.abs(r-maxR)<0.001?'#D85A30':'#2563EB'),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.toFixed(3)}°C / 10년`}}},scales:{x:{ticks:{color:'#6B7280',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#6B7280',font:{size:11},callback:v=>`${v.toFixed(2)}`},title:{display:true,text:'°C / 10년',color:'#9CA3AF',font:{size:11}}}}}
+  });
+}
+
+/* ── 주제 선택 ── */
+function selectTopic(idx){
+  document.querySelectorAll('.topic-card').forEach((c,i)=>c.classList.toggle('selected',i===idx));
+  state.selectedTopic=idx;
+  const td=topicData[idx];
+  document.getElementById('topicDeepTitle').textContent=td.title+' 심화 탐구';
+  document.getElementById('topicDeepContent').innerHTML=td.qs.map(q=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px">${q.q}</div>
+      <textarea class="reflect-textarea" id="${q.id}" placeholder="${q.ph}" oninput="updateChar('${q.id}','${q.id}c',250);saveProgress()" style="min-height:80px"></textarea>
+      <div class="char-counter" id="${q.id}c">0 / 250자</div>
+    </div>`).join('');
+  document.getElementById('topicQuestions').style.display='block';
+  saveProgress();
+  setTimeout(()=>document.getElementById('topicQuestions').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function updateChar(id,countId,max){
+  const v=(document.getElementById(id)||{}).value||'';
+  const el=document.getElementById(countId);
+  if(el)el.textContent=`${v.length} / ${max}자`;
+}
+
+/* ── 제출 ── */
+function showComplete(){
+  if(state.selectedTopic<0){
+    alert('탐구 주제를 먼저 선택해주세요!');
+    document.querySelector('.reflect-card').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const name=document.getElementById('sname').value||'(이름 미입력)';
+
+  // 공통 질문 키
+  const commonKeys=[
+    {id:'r1',label:'Q14. 가장 놀라운 숫자'},
+    {id:'r2',label:'Q15. 2°C 상승 시 변화'},
+    {id:'r3',label:'Q18. 나의 실천 계산'},
+    {id:'r4',label:'Q19. 반 전체 효과'},
+    {id:'r5',label:'마무리 한 문장'}
+  ];
+
+  // 선택된 심화 주제 질문
+  const deepKeys=state.selectedTopic>=0
+    ? topicData[state.selectedTopic].qs.map((q,i)=>({id:q.id,label:`심화 Q${16+i} (${topicData[state.selectedTopic].title})`}))
+    : [];
+
+  const allKeys=[...commonKeys,...deepKeys];
+
+  let text=`[지구 기온 변화 탐구 — 1차시]\n이름: ${name}\n작성일: ${new Date().toLocaleDateString('ko-KR')}\n퀴즈 정답: ${state.correct}/${TOTAL_QUIZ}\n\n`;
+  const preview=document.getElementById('ansPreview');
+  preview.innerHTML=`<div class="ap-label">이름: ${name} / 정답: ${state.correct}/${TOTAL_QUIZ}</div>`;
+
+  allKeys.forEach(k=>{
+    const el=document.getElementById(k.id);
+    if(el&&el.value&&el.value.trim()){
+      const v=el.value.trim();
+      text+=`[${k.label}]\n${v}\n\n`;
+      preview.innerHTML+=`<div class="ap-label" style="margin-top:8px">${k.label}</div><div style="margin-top:2px;color:#374151">${v}</div>`;
+    }
+  });
+
+  window._answerText=text;
+  document.getElementById('finalScore').textContent=state.correct;
+  document.getElementById('sc-total').textContent=TOTAL_QUIZ;
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  document.getElementById('scComplete').classList.add('active');
+  document.querySelectorAll('.stage-tab').forEach(el=>el.classList.add('done'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function copyAll(){
+  if(!window._answerText)return;
+  navigator.clipboard.writeText(window._answerText).then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    btn.textContent='✅ 복사 완료!';
+    setTimeout(()=>btn.textContent='📋 내 답변 전체 복사하기',2000);
+  }).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=window._answerText;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    alert('복사되었습니다!');
+  });
+}
+
+/* ── 초기화 ── */
+buildTempChart('all');
+updateDots(0);
+loadProgress();
+document.getElementById('sname').addEventListener('input',saveProgress);
+document.querySelectorAll('textarea').forEach(el=>{
+  if(!el.getAttribute('oninput'))el.addEventListener('input',saveProgress);
+});
+</script>
+</body>
+</html>
