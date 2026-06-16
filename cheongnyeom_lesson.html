@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>청렴 교육 — 자기주도 학습</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:#f5f4f0;color:#1a1a1a;font-size:16px;line-height:1.7}
+.app{max-width:720px;margin:0 auto;padding:1.5rem 1rem 4rem}
+.header{text-align:center;padding:2rem 0 1.5rem}
+.header-icon{font-size:48px;margin-bottom:12px}
+.header h1{font-size:24px;font-weight:700;margin-bottom:6px;color:#2d2a5e}
+.header p{font-size:14px;color:#666;line-height:1.6}
+.step-nav{display:flex;gap:8px;margin-bottom:1.5rem;justify-content:center;align-items:center}
+.step-dot{width:36px;height:36px;border-radius:50%;border:2px solid #d0ceea;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#aaa;background:#fff;transition:all 0.3s}
+.step-dot.active{background:#2d2a5e;color:#fff;border-color:#2d2a5e}
+.step-dot.done{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.step-line{flex:1;height:2px;background:#d0ceea;max-width:60px;border-radius:1px}
+.stage{display:none}
+.stage.active{display:block}
+.stage-header{margin-bottom:1.5rem}
+.stage-tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;background:#e8e7f7;color:#2d2a5e;letter-spacing:0.04em}
+.stage-title{font-size:20px;font-weight:700;margin-bottom:4px;color:#1a1a1a}
+.stage-desc{font-size:14px;color:#555;line-height:1.7}
+.progress-bar{height:5px;background:#e0dff0;border-radius:3px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:5px;background:linear-gradient(90deg,#2d2a5e,#534AB7);border-radius:3px;transition:width 0.5s ease}
+.card{background:#fff;border:1px solid #e8e7f0;border-radius:16px;padding:1.5rem;margin-bottom:1rem;box-shadow:0 1px 4px rgba(45,42,94,0.06)}
+.reading-box{background:#f0effe;border-left:4px solid #534AB7;border-radius:0 12px 12px 0;padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:14px;line-height:1.9;color:#2d2a5e}
+.reading-box strong{font-weight:700}
+.scenario-box{background:#fff8ee;border-left:4px solid #EF9F27;border-radius:0 12px 12px 0;padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:14px;color:#5a3e0a;line-height:1.8}
+.q-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px;background:#e8e7f7;color:#2d2a5e;letter-spacing:0.04em}
+.q-badge.amber{background:#fff0d4;color:#854F0B}
+.q-badge.teal{background:#d4f5ea;color:#0a5e40}
+.q-text{font-size:15px;font-weight:700;margin-bottom:1rem;line-height:1.6;color:#1a1a1a}
+.options{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
+.opt{padding:12px 16px;border:1.5px solid #e0dff0;border-radius:12px;font-size:14px;cursor:pointer;background:#fff;color:#333;text-align:left;transition:all 0.15s;font-family:inherit;line-height:1.5}
+.opt:hover{border-color:#534AB7;background:#f5f4fd}
+.opt.correct{background:#eaf7f0;border-color:#1D9E75;color:#0a5e40;font-weight:700}
+.opt.wrong{background:#fef0f0;border-color:#e05c5c;color:#7a1a1a}
+.opt.disabled{cursor:default;pointer-events:none}
+.ox-row{display:flex;gap:12px;margin-bottom:1rem}
+.ox-btn{flex:1;padding:14px;border:1.5px solid #e0dff0;border-radius:12px;font-size:22px;cursor:pointer;background:#fff;transition:all 0.15s;font-family:inherit;font-weight:700}
+.ox-btn:hover{border-color:#534AB7;background:#f5f4fd}
+.ox-btn.correct{background:#eaf7f0;border-color:#1D9E75}
+.ox-btn.wrong{background:#fef0f0;border-color:#e05c5c}
+.feedback{font-size:14px;padding:12px 16px;border-radius:12px;margin-bottom:1rem;line-height:1.7;display:none}
+.feedback.show{display:block}
+.feedback.correct{background:#eaf7f0;color:#0a5e40;border:1px solid #b6e8d3}
+.feedback.wrong{background:#fef0f0;color:#7a1a1a;border:1px solid #f5c0c0}
+.hint-toggle{font-size:13px;color:#534AB7;background:none;border:none;cursor:pointer;padding:0;margin-bottom:8px;font-family:inherit;display:flex;align-items:center;gap:4px}
+.hint-box{background:#f5f4fd;border-radius:12px;padding:10px 14px;font-size:13px;color:#444;margin-bottom:1rem;display:none;line-height:1.7;border:1px solid #d0ceea}
+.hint-box.show{display:block}
+.next-btn{width:100%;padding:14px;background:#2d2a5e;color:#fff;border:none;border-radius:12px;font-size:15px;cursor:pointer;font-weight:700;display:none;font-family:inherit;transition:background 0.15s}
+.next-btn.show{display:block}
+.next-btn:hover{background:#534AB7}
+.textarea-q{width:100%;padding:12px 14px;border:1.5px solid #e0dff0;border-radius:12px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff;resize:vertical;line-height:1.7;transition:border 0.15s}
+.textarea-q:focus{outline:none;border-color:#534AB7}
+.char-count{font-size:12px;color:#999;text-align:right;margin-top:4px;margin-bottom:1rem}
+.name-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.name-row input,.name-input{width:100%;padding:12px 14px;border:1.5px solid #e0dff0;border-radius:12px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff;transition:border 0.15s}
+.name-input{margin-bottom:14px}
+.name-row input:focus,.name-input:focus{outline:none;border-color:#534AB7}
+.start-btn{width:100%;padding:15px;background:#2d2a5e;color:#fff;border:none;border-radius:12px;font-size:16px;cursor:pointer;font-weight:700;font-family:inherit;transition:background 0.15s}
+.start-btn:hover{background:#534AB7}
+.info-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:1rem}
+.info-card{background:#fff;border:1px solid #e8e7f0;border-radius:14px;padding:1rem;text-align:center;box-shadow:0 1px 4px rgba(45,42,94,0.05)}
+.info-card .label{font-size:12px;color:#888;margin-bottom:4px}
+.info-card .value{font-size:20px;font-weight:700;color:#2d2a5e}
+.submit-section{text-align:center;padding:2rem 0}
+.submit-section h2{font-size:22px;font-weight:700;margin-bottom:8px;color:#2d2a5e}
+.submit-section p{font-size:14px;color:#666;margin-bottom:1.5rem;line-height:1.7}
+.score-ring{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:120px;height:120px;border-radius:50%;border:5px solid #2d2a5e;margin-bottom:1.5rem}
+.score-ring .score-num{font-size:28px;font-weight:700;color:#2d2a5e;line-height:1}
+.score-ring .score-sub{font-size:12px;color:#888;margin-top:2px}
+.copy-btn{padding:14px 36px;background:#2d2a5e;color:#fff;border:none;border-radius:12px;font-size:15px;cursor:pointer;font-weight:700;font-family:inherit;transition:background 0.15s}
+.copy-btn:hover{background:#534AB7}
+.copy-msg{margin-top:12px;font-size:13px;color:#1D9E75;display:none;font-weight:700}
+@media(max-width:480px){.name-row{grid-template-columns:1fr 1fr}.info-cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="stage-0" class="stage active">
+    <div class="header">
+      <div class="header-icon">🛡️</div>
+      <h1>청렴 교육</h1>
+      <p>공정하고 깨끗한 세상을 만드는 우리<br>자기주도 학습 — 약 45분</p>
+    </div>
+    <div class="card">
+      <p style="font-size:14px;color:#666;margin-bottom:1rem;line-height:1.6">시작하기 전에 학년, 반, 번호, 이름을 입력해주세요.</p>
+      <div class="name-row">
+        <input type="number" id="input-grade" placeholder="학년 (1~3)" min="1" max="3">
+        <input type="number" id="input-class" placeholder="반" min="1" max="30">
+        <input type="number" id="input-number" placeholder="번호" min="1" max="50">
+      </div>
+      <input class="name-input" type="text" id="input-name" placeholder="이름">
+      <button class="start-btn" onclick="startApp()">학습 시작하기 →</button>
+    </div>
+    <div class="info-cards">
+      <div class="info-card"><div class="label">학습 단계</div><div class="value">4단계</div></div>
+      <div class="info-card"><div class="label">총 문제 수</div><div class="value">14문제</div></div>
+      <div class="info-card"><div class="label">소요 시간</div><div class="value">45분</div></div>
+    </div>
+  </div>
+  <div id="stage-1" class="stage">
+    <div class="progress-bar"><div class="progress-fill" style="width:5%"></div></div>
+    <div class="step-nav">
+      <div class="step-dot active">1</div><div class="step-line"></div>
+      <div class="step-dot">2</div><div class="step-line"></div>
+      <div class="step-dot">3</div><div class="step-line"></div>
+      <div class="step-dot">4</div>
+    </div>
+    <div class="stage-header">
+      <div class="stage-tag">단계 1</div>
+      <div class="stage-title">청렴이란 무엇인가?</div>
+      <div class="stage-desc">청렴(淸廉)의 뜻과 왜 중요한지 알아봐요. 아래 내용을 꼼꼼히 읽고 퀴즈를 풀어보세요!</div>
+    </div>
+    <div class="card">
+      <div class="reading-box">
+        <strong>청렴(淸廉)이란?</strong><br>
+        청렴은 '맑을 청(淸)'과 '청렴할 렴(廉)'으로 이루어진 말로, <strong>개인의 이익을 위해 부정한 방법을 쓰지 않고 공정하게 행동하는 것</strong>을 뜻해요.<br><br>
+        청렴한 사람은 자신의 권한이나 지위를 이용해 부당한 이익을 취하지 않고, 모든 사람을 똑같이 공정하게 대합니다.<br><br>
+        <strong>반대말은 '부패(腐敗)'</strong>예요. 부패는 권한을 가진 사람이 개인적인 이익을 위해 그 권한을 남용하는 행위를 말해요.
+      </div>
+    </div>
+    <div id="q1" class="card">
+      <div class="q-badge">Q1 · 4지선다</div>
+      <div class="q-text">다음 중 '청렴'의 뜻으로 가장 알맞은 것은 무엇인가요?</div>
+      <div class="options">
+        <button class="opt" onclick="checkMC('q1',this,false)">① 공부를 열심히 해서 좋은 성적을 받는 것</button>
+        <button class="opt" onclick="checkMC('q1',this,true)">② 개인의 이익을 위해 부정한 방법을 쓰지 않고 공정하게 행동하는 것</button>
+        <button class="opt" onclick="checkMC('q1',this,false)">③ 다른 사람보다 더 많은 것을 가지려고 노력하는 것</button>
+        <button class="opt" onclick="checkMC('q1',this,false)">④ 규칙을 잘 지키며 학교생활을 성실히 하는 것</button>
+      </div>
+      <div class="feedback" id="q1-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q1-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q1-hint">청렴의 핵심은 '부정한 방법을 쓰지 않는 것'과 '공정함'이에요. 성실함이나 열심히 하는 것과는 달라요!</div>
+      <button class="next-btn" id="q1-next" onclick="showQ('q2')">다음 문제 →</button>
+    </div>
+    <div id="q2" class="card" style="display:none">
+      <div class="q-badge">Q2 · OX 퀴즈</div>
+      <div class="q-text">청렴의 반대말은 '부패'이며, 부패는 권한을 개인적인 이익을 위해 남용하는 것이다.</div>
+      <div class="ox-row">
+        <button class="ox-btn" onclick="checkOX('q2',this,true)">⭕ 맞다</button>
+        <button class="ox-btn" onclick="checkOX('q2',this,false)">❌ 틀리다</button>
+      </div>
+      <div class="feedback" id="q2-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q2-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q2-hint">위 읽기 자료에서 청렴과 부패의 관계를 다시 확인해보세요!</div>
+      <button class="next-btn" id="q2-next" onclick="showQ('q3')">다음 문제 →</button>
+    </div>
+    <div id="q3" class="card" style="display:none">
+      <div class="q-badge">Q3 · 4지선다</div>
+      <div class="reading-box" style="margin-bottom:1rem;font-size:13px">
+        <strong>우리나라의 청렴 현황</strong><br>
+        국제투명성기구(TI)는 매년 전 세계 180개 국가의 부패 인식 지수(CPI)를 발표해요. 점수가 높을수록 청렴한 나라예요. 2023년 우리나라는 100점 만점에 63점으로 전체 32위를 기록했어요. 1위는 덴마크(90점)였어요.
+      </div>
+      <div class="q-text">위 자료에서 부패 인식 지수(CPI) 점수가 높을수록 어떤 나라인가요?</div>
+      <div class="options">
+        <button class="opt" onclick="checkMC('q3',this,false)">① 경제적으로 발전한 나라</button>
+        <button class="opt" onclick="checkMC('q3',this,false)">② 인구가 많은 나라</button>
+        <button class="opt" onclick="checkMC('q3',this,true)">③ 청렴한 나라</button>
+        <button class="opt" onclick="checkMC('q3',this,false)">④ 군사력이 강한 나라</button>
+      </div>
+      <div class="feedback" id="q3-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q3-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q3-hint">CPI는 '부패 인식 지수'예요. 부패가 적을수록, 즉 청렴할수록 점수가 높아요!</div>
+      <button class="next-btn" id="q3-next" onclick="goStage(2)">다음 단계 →</button>
+    </div>
+  </div>
+  <div id="stage-2" class="stage">
+    <div class="progress-bar"><div class="progress-fill" style="width:30%"></div></div>
+    <div class="step-nav">
+      <div class="step-dot done">✓</div><div class="step-line"></div>
+      <div class="step-dot active">2</div><div class="step-line"></div>
+      <div class="step-dot">3</div><div class="step-line"></div>
+      <div class="step-dot">4</div>
+    </div>
+    <div class="stage-header">
+      <div class="stage-tag">단계 2</div>
+      <div class="stage-title">부패의 사례와 영향</div>
+      <div class="stage-desc">실제 사례를 통해 부패가 어떤 모습으로 나타나는지, 그리고 사회에 어떤 해를 끼치는지 알아봐요.</div>
+    </div>
+    <div id="q4" class="card">
+      <div class="q-badge amber">Q4 · 사례 판단</div>
+      <div class="scenario-box"><strong>상황:</strong> 학교 급식 납품 업체 사장이 영양교사에게 "우리 식재료를 선택해주면 명절마다 선물을 드리겠다"고 제안했고, 영양교사는 이를 받아들였다.</div>
+      <div class="q-text">이 상황에서 부패 행위를 한 사람은 누구인가요?</div>
+      <div class="options">
+        <button class="opt" onclick="checkMC('q4',this,false)">① 납품 업체 사장만 부패 행위를 했다</button>
+        <button class="opt" onclick="checkMC('q4',this,false)">② 영양교사만 부패 행위를 했다</button>
+        <button class="opt" onclick="checkMC('q4',this,true)">③ 납품 업체 사장과 영양교사 모두 부패 행위를 했다</button>
+        <button class="opt" onclick="checkMC('q4',this,false)">④ 아무도 부패 행위를 하지 않았다. 선물은 괜찮다</button>
+      </div>
+      <div class="feedback" id="q4-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q4-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q4-hint">부정한 이익을 제공한 사람과 받은 사람 모두 부패에 해당해요. '뇌물죄'는 주는 사람(증뢰)과 받는 사람(수뢰) 모두에게 적용돼요!</div>
+      <button class="next-btn" id="q4-next" onclick="showQ('q5')">다음 문제 →</button>
+    </div>
+    <div id="q5" class="card" style="display:none">
+      <div class="q-badge amber">Q5 · OX 퀴즈</div>
+      <div class="scenario-box"><strong>상황:</strong> 시험 감독 선생님이 자기 반 학생에게만 몰래 답을 알려줬다.</div>
+      <div class="q-text">이 행동은 청렴하지 않은 행동이다.</div>
+      <div class="ox-row">
+        <button class="ox-btn" onclick="checkOX('q5',this,true)">⭕ 맞다</button>
+        <button class="ox-btn" onclick="checkOX('q5',this,false)">❌ 틀리다</button>
+      </div>
+      <div class="feedback" id="q5-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q5-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q5-hint">선생님이 감독이라는 '권한'을 이용해 특정 학생에게만 이익을 준 거예요. 다른 학생들에게는 불공정한 행동이죠!</div>
+      <button class="next-btn" id="q5-next" onclick="showQ('q6')">다음 문제 →</button>
+    </div>
+    <div id="q6" class="card" style="display:none">
+      <div class="q-badge amber">Q6 · 4지선다</div>
+      <div class="reading-box" style="font-size:13px">
+        <strong>부패가 사회에 미치는 영향</strong><br>
+        • 사회 전체의 신뢰가 무너져요 — "노력해봤자 소용없다"는 생각이 퍼져요<br>
+        • 실력 있는 사람보다 '줄 잘 선' 사람이 앞서가게 돼요<br>
+        • 국가 예산이 낭비되어 공공서비스(도로, 병원, 학교 등)의 질이 낮아져요<br>
+        • 외국 기업들이 투자를 꺼려 경제가 나빠질 수 있어요
+      </div>
+      <div class="q-text">부패가 사회에 미치는 영향으로 옳지 않은 것은?</div>
+      <div class="options">
+        <button class="opt" onclick="checkMC('q6',this,false)">① 사회 전체의 신뢰가 무너진다</button>
+        <button class="opt" onclick="checkMC('q6',this,false)">② 실력보다 인맥이 더 중요해진다</button>
+        <button class="opt" onclick="checkMC('q6',this,true)">③ 공공서비스의 질이 높아진다</button>
+        <button class="opt" onclick="checkMC('q6',this,false)">④ 외국 기업의 투자가 줄어들 수 있다</button>
+      </div>
+      <div class="feedback" id="q6-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q6-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q6-hint">부패가 일어나면 국가 예산이 낭비되기 때문에 공공서비스의 질은 '높아지는' 것이 아니라 '낮아져요'!</div>
+      <button class="next-btn" id="q6-next" onclick="showQ('q7')">다음 문제 →</button>
+    </div>
+    <div id="q7" class="card" style="display:none">
+      <div class="q-badge amber">Q7 · 4지선다</div>
+      <div class="scenario-box"><strong>상황:</strong> 민준이는 동네 공원 공사 업체를 선정하는 공무원인데, 자신의 친척이 운영하는 업체를 다른 더 좋은 업체 대신 선택했다.</div>
+      <div class="q-text">민준이의 행동이 문제인 이유로 가장 적절한 것은?</div>
+      <div class="options">
+        <button class="opt" onclick="checkMC('q7',this,false)">① 친척 회사는 항상 품질이 나쁘기 때문에</button>
+        <button class="opt" onclick="checkMC('q7',this,true)">② 공공의 이익보다 개인적 관계를 우선했기 때문에</button>
+        <button class="opt" onclick="checkMC('q7',this,false)">③ 공원 공사는 가족이 하면 안 되기 때문에</button>
+        <button class="opt" onclick="checkMC('q7',this,false)">④ 공무원은 친척을 도우면 절대 안 되기 때문에</button>
+      </div>
+      <div class="feedback" id="q7-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q7-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q7-hint">공무원은 '공공의 이익'을 위해 일해야 해요. 개인적인 관계를 공적인 결정에 끌어들이는 것을 '이해충돌'이라고 해요!</div>
+      <button class="next-btn" id="q7-next" onclick="goStage(3)">다음 단계 →</button>
+    </div>
+  </div>
+  <div id="stage-3" class="stage">
+    <div class="progress-bar"><div class="progress-fill" style="width:60%"></div></div>
+    <div class="step-nav">
+      <div class="step-dot done">✓</div><div class="step-line"></div>
+      <div class="step-dot done">✓</div><div class="step-line"></div>
+      <div class="step-dot active">3</div><div class="step-line"></div>
+      <div class="step-dot">4</div>
+    </div>
+    <div class="stage-header">
+      <div class="stage-tag">단계 3</div>
+      <div class="stage-title">공정함과 청렴 관련 법·제도</div>
+      <div class="stage-desc">청렴을 지키기 위해 우리 사회에는 어떤 법과 제도가 있는지 알아봐요.</div>
+    </div>
+    <div id="q8" class="card">
+      <div class="q-badge teal">Q8 · 내용 이해</div>
+      <div class="reading-box" style="font-size:13px">
+        <strong>청탁금지법 (일명 김영란법)</strong><br>
+        2016년부터 시행된 이 법은 공직자, 언론인, 교직원 등이 직무와 관련해 금품이나 향응을 받는 것을 금지해요.<br><br>
+        <strong>핵심 기준:</strong><br>
+        • 식사 접대: 3만 원 이하만 허용<br>
+        • 선물: 5만 원 이하 (농축수산물은 15만 원 이하)<br>
+        • 경조사비(결혼식·장례식): 5만 원 이하<br><br>
+        이 기준을 넘으면 제공한 사람과 받은 사람 <strong>모두</strong> 처벌받을 수 있어요.
+      </div>
+      <div class="q-text">청탁금지법에 따르면, 선생님께 드릴 수 있는 선물의 최대 금액은? (일반 선물 기준)</div>
+      <div class="options">
+        <button class="opt" onclick="checkMC('q8',this,false)">① 3만 원</button>
+        <button class="opt" onclick="checkMC('q8',this,true)">② 5만 원</button>
+        <button class="opt" onclick="checkMC('q8',this,false)">③ 10만 원</button>
+        <button class="opt" onclick="checkMC('q8',this,false)">④ 15만 원</button>
+      </div>
+      <div class="feedback" id="q8-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q8-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q8-hint">위 읽기 자료에서 선물 금액 기준을 다시 확인해보세요. 15만 원은 농축수산물에만 해당해요!</div>
+      <button class="next-btn" id="q8-next" onclick="showQ('q9')">다음 문제 →</button>
+    </div>
+    <div id="q9" class="card" style="display:none">
+      <div class="q-badge teal">Q9 · OX 퀴즈</div>
+      <div class="q-text">청탁금지법에서 기준 금액을 초과하는 선물을 받은 선생님만 처벌을 받는다.</div>
+      <div class="ox-row">
+        <button class="ox-btn" onclick="checkOX('q9',this,false)">⭕ 맞다</button>
+        <button class="ox-btn" onclick="checkOX('q9',this,true)">❌ 틀리다</button>
+      </div>
+      <div class="feedback" id="q9-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q9-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q9-hint">읽기 자료 마지막 문장을 다시 보세요! "제공한 사람과 받은 사람 모두" 처벌받을 수 있다고 나와 있어요.</div>
+      <button class="next-btn" id="q9-next" onclick="showQ('q10')">다음 문제 →</button>
+    </div>
+    <div id="q10" class="card" style="display:none">
+      <div class="q-badge teal">Q10 · 4지선다</div>
+      <div class="reading-box" style="font-size:13px">
+        <strong>공익신고제도</strong><br>
+        부패나 공익 침해 행위를 목격했을 때 신고하는 사람을 '공익신고자'라고 해요. 우리나라는 공익신고자보호법으로 신고자의 신분을 비밀로 보호하고, 신고로 인한 불이익을 막아요. 오히려 부패를 신고하면 포상금을 받을 수도 있어요.
+      </div>
+      <div class="q-text">공익신고자보호법의 목적으로 가장 알맞은 것은?</div>
+      <div class="options">
+        <button class="opt" onclick="checkMC('q10',this,false)">① 부패를 저지른 사람을 더 강하게 처벌하기 위해</button>
+        <button class="opt" onclick="checkMC('q10',this,true)">② 부패 신고자가 불이익을 받지 않도록 보호하기 위해</button>
+        <button class="opt" onclick="checkMC('q10',this,false)">③ 모든 공무원의 월급을 올려주기 위해</button>
+        <button class="opt" onclick="checkMC('q10',this,false)">④ 기업이 더 많은 이익을 낼 수 있도록 돕기 위해</button>
+      </div>
+      <div class="feedback" id="q10-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('q10-hint')">💡 힌트 보기</button>
+      <div class="hint-box" id="q10-hint">법 이름에 힌트가 있어요! '공익신고자 보호법' — 누구를 보호하는 법인지 생각해보세요.</div>
+      <button class="next-btn" id="q10-next" onclick="goStage(4)">다음 단계 →</button>
+    </div>
+  </div>
+  <div id="stage-4" class="stage">
+    <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+    <div class="step-nav">
+      <div class="step-dot done">✓</div><div class="step-line"></div>
+      <div class="step-dot done">✓</div><div class="step-line"></div>
+      <div class="step-dot done">✓</div><div class="step-line"></div>
+      <div class="step-dot active">4</div>
+    </div>
+    <div class="stage-header">
+      <div class="stage-tag">단계 4</div>
+      <div class="stage-title">나의 청렴 다짐</div>
+      <div class="stage-desc">지금까지 배운 것을 바탕으로 자신의 생각을 자유롭게 써보세요. 정답이 없는 질문이에요!</div>
+    </div>
+    <div class="card">
+      <div class="q-badge teal">Q11 · 서술형</div>
+      <div class="q-text">오늘 청렴교육에서 가장 기억에 남는 내용은 무엇인가요? 그 이유도 함께 써주세요.</div>
+      <textarea class="textarea-q" id="q11" rows="4" placeholder="예) 청탁금지법에서 선물 금액 기준이 있다는 것이 인상적이었습니다. 왜냐하면..." oninput="countChar('q11',200)"></textarea>
+      <div class="char-count"><span id="q11-count">0</span> / 200자</div>
+    </div>
+    <div class="card">
+      <div class="q-badge teal">Q12 · 서술형</div>
+      <div class="q-text">학교생활에서 '청렴'과 '공정함'을 실천할 수 있는 방법을 2가지 이상 써보세요.</div>
+      <textarea class="textarea-q" id="q12" rows="4" placeholder="예)&#10;1. 시험에서 컨닝하지 않기&#10;2. 모둠 활동에서 내 역할을 성실하게 하기" oninput="countChar('q12',300)"></textarea>
+      <div class="char-count"><span id="q12-count">0</span> / 300자</div>
+    </div>
+    <div class="card">
+      <div class="q-badge teal">Q13 · 서술형</div>
+      <div class="scenario-box"><strong>상황:</strong> 친한 친구가 "우리 엄마가 반장 선거 때 담임 선생님께 선물을 드리면 반장 될 수 있다고 했어. 같이 하자"고 제안했다.</div>
+      <div class="q-text">이 상황에서 여러분은 어떻게 할 것인지, 그 이유와 함께 써주세요.</div>
+      <textarea class="textarea-q" id="q13" rows="4" placeholder="나라면 이렇게 할 것입니다. 왜냐하면..." oninput="countChar('q13',300)"></textarea>
+      <div class="char-count"><span id="q13-count">0</span> / 300자</div>
+    </div>
+    <div class="card">
+      <div class="q-badge teal">Q14 · 서술형</div>
+      <div class="q-text">청렴한 사회를 만들기 위해 내가 일상에서 실천할 수 있는 한 가지를 골라, 왜 그것이 중요한지 이유와 함께 나만의 '청렴 다짐'을 써주세요.</div>
+      <textarea class="textarea-q" id="q14" rows="4" placeholder="나는 앞으로 ___을(를) 실천하겠습니다. 왜냐하면..." oninput="countChar('q14',300)"></textarea>
+      <div class="char-count"><span id="q14-count">0</span> / 300자</div>
+    </div>
+    <button class="start-btn" onclick="goStage(5)" style="margin-top:0.5rem">완료 — 결과 보기 ✓</button>
+  </div>
+  <div id="stage-5" class="stage">
+    <div class="submit-section">
+      <div style="font-size:56px;margin-bottom:12px">🏅</div>
+      <h2>학습 완료!</h2>
+      <div class="score-ring">
+        <div class="score-num" id="final-score-num">0</div>
+        <div class="score-sub">/ 10 정답</div>
+      </div>
+      <p>아래 버튼을 눌러 내 답변 전체를 복사한 뒤,<br>선생님이 안내한 <strong>구글 폼</strong>에 붙여넣기 해서 제출하세요.</p>
+      <button class="copy-btn" onclick="copyResult()">📋 내 답변 전체 복사하기</button>
+      <div class="copy-msg" id="copy-msg">✅ 복사되었어요! 구글 폼에 붙여넣기 하세요.</div>
+    </div>
+  </div>
+</div>
+<script>
+let student={grade:'',cls:'',num:'',name:''};
+let answers={};
+let score=0;
+function startApp(){
+  const g=document.getElementById('input-grade').value.trim();
+  const c=document.getElementById('input-class').value.trim();
+  const n=document.getElementById('input-number').value.trim();
+  const nm=document.getElementById('input-name').value.trim();
+  if(!g||!c||!n||!nm){alert('학년, 반, 번호, 이름을 모두 입력해주세요!');return;}
+  student={grade:g,cls:c,num:n,name:nm};
+  goStage(1);
+}
+function goStage(n){
+  document.querySelectorAll('.stage').forEach(s=>s.classList.remove('active'));
+  document.getElementById('stage-'+n).classList.add('active');
+  if(n===5)document.getElementById('final-score-num').textContent=score;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function checkMC(qid,btn,isCorrect){
+  const card=document.getElementById(qid);
+  card.querySelectorAll('.opt').forEach(b=>{b.classList.add('disabled');b.style.pointerEvents='none';});
+  const fb=document.getElementById(qid+'-fb');
+  const next=document.getElementById(qid+'-next');
+  if(isCorrect){
+    btn.classList.add('correct');
+    fb.className='feedback correct show';
+    fb.innerHTML='✅ 정답이에요! '+getMsg(qid,true);
+    if(!answers[qid]){score++;answers[qid]=true;}
+  }else{
+    btn.classList.add('wrong');
+    card.querySelectorAll('.opt').forEach(b=>{if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes(',true)'))b.classList.add('correct');});
+    fb.className='feedback wrong show';
+    fb.innerHTML='❌ 아쉬워요! '+getMsg(qid,false);
+    if(!answers[qid])answers[qid]=false;
+  }
+  next.classList.add('show');
+}
+function checkOX(qid,btn,isCorrect){
+  const card=document.getElementById(qid);
+  card.querySelectorAll('.ox-btn').forEach(b=>b.style.pointerEvents='none');
+  const fb=document.getElementById(qid+'-fb');
+  const next=document.getElementById(qid+'-next');
+  if(isCorrect){
+    btn.classList.add('correct');
+    fb.className='feedback correct show';
+    fb.innerHTML='✅ 정답이에요! '+getMsg(qid,true);
+    if(!answers[qid]){score++;answers[qid]=true;}
+  }else{
+    btn.classList.add('wrong');
+    card.querySelectorAll('.ox-btn').forEach(b=>{if(b!==btn)b.classList.add('correct');});
+    fb.className='feedback wrong show';
+    fb.innerHTML='❌ 아쉬워요! '+getMsg(qid,false);
+    if(!answers[qid])answers[qid]=false;
+  }
+  next.classList.add('show');
+}
+function showQ(nextId){
+  const el=document.getElementById(nextId);
+  el.style.display='block';
+  setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+function toggleHint(id){document.getElementById(id).classList.toggle('show');}
+function countChar(id){
+  const val=document.getElementById(id).value;
+  document.getElementById(id+'-count').textContent=val.length;
+  answers[id]=val;
+}
+function getMsg(qid,correct){
+  const msgs={
+    q1:{t:'청렴은 부정한 방법을 쓰지 않고 공정하게 행동하는 것이에요.',f:'청렴의 핵심은 공정함이에요. 성실함과는 달라요!'},
+    q2:{t:'청렴 ↔ 부패, 부패는 권한 남용이에요.',f:'읽기 자료를 다시 확인해보세요.'},
+    q3:{t:'CPI 점수가 높을수록 청렴한 나라예요. 덴마크(90점)가 1위랍니다!',f:'CPI는 부패 인식 지수예요. 부패가 적을수록 점수가 높아요.'},
+    q4:{t:'뇌물을 준 사람과 받은 사람 모두 처벌 대상이에요!',f:'뇌물은 준 사람도, 받은 사람도 모두 문제가 돼요!'},
+    q5:{t:'권한을 이용한 불공정한 행동은 부패예요.',f:'선생님의 행동이 다른 학생들에게 공정한지 생각해봐요.'},
+    q6:{t:'부패가 일어나면 예산이 낭비되어 공공서비스가 오히려 나빠져요.',f:'부패 → 예산 낭비 → 공공서비스 질 저하예요.'},
+    q7:{t:'공무원은 공공의 이익을 위해 일해야 해요.',f:'공무원이 공적 결정에서 지켜야 할 것이 무엇인지 생각해보세요.'},
+    q8:{t:'선물은 5만 원 이하! 농축수산물만 15만 원 이하예요.',f:'읽기 자료의 선물 금액 기준을 다시 확인해봐요.'},
+    q9:{t:'선물을 준 사람과 받은 사람 모두 처벌받아요!',f:'마지막 문장 — "제공한 사람과 받은 사람 모두"를 다시 보세요!'},
+    q10:{t:'공익신고자보호법은 신고자를 보호하고 불이익을 막기 위한 법이에요.',f:'법 이름 자체에 힌트가 있어요!'}
+  };
+  return msgs[qid]?msgs[qid][correct?'t':'f']:'';
+}
+function copyResult(){
+  const q11=document.getElementById('q11').value||'(미작성)';
+  const q12=document.getElementById('q12').value||'(미작성)';
+  const q13=document.getElementById('q13').value||'(미작성)';
+  const q14=document.getElementById('q14').value||'(미작성)';
+  const text=`[청렴교육 학습 결과]\n━━━━━━━━━━━━━━━━━━━━\n학년/반/번호/이름: ${student.grade}학년 ${student.cls}반 ${student.num}번 ${student.name}\n객관식 점수: ${score} / 10문제\n━━━━━━━━━━━━━━━━━━━━\n\n[Q11] 가장 기억에 남는 내용:\n${q11}\n\n[Q12] 학교생활 속 청렴 실천 방법:\n${q12}\n\n[Q13] 친구의 제안에 대한 나의 선택:\n${q13}\n\n[Q14] 나의 청렴 다짐:\n${q14}`;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{document.getElementById('copy-msg').style.display='block';}).catch(()=>fallbackCopy(text));
+  }else{fallbackCopy(text);}
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');document.getElementById('copy-msg').style.display='block';}
+  catch(e){alert('복사에 실패했어요. 직접 선택해서 복사해주세요.');}
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>
